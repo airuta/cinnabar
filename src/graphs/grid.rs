@@ -63,10 +63,30 @@ where
     }
 }
 
+// Getter interface
+
+impl<I: Index, E, V> Grid<I, E, V> {
+    pub fn get_vertex(&self, id: I) -> Option<&V> {
+        self.vertices.get(&id).map(|(_, _, vertex)| vertex)
+    }
+
+    pub fn get_vertex_mut(&mut self, id: I) -> Option<&mut V> {
+        self.vertices.get_mut(&id).map(|(_, _, vertex)| vertex)
+    }
+
+    pub fn get_edge(&self, a: I, b: I) -> Option<&E> {
+        self.edges.get(&(a, b))
+    }
+
+    pub fn get_edge_mut(&mut self, a: I, b: I) -> Option<&mut E> {
+        self.edges.get_mut(&(a, b))
+    }
+}
+
 // Coords interface
 
 impl<I: Index, E, V> Grid<I, E, V> {
-    pub fn get(&self, row: i32, column: i32) -> Option<I> {
+    pub fn at(&self, row: i32, column: i32) -> Option<I> {
         self.grid
             .get(row as usize)
             .and_then(|row| row.get(column as usize))
@@ -104,7 +124,7 @@ impl<I: Index, E, V> VertexProvider<I> for Grid<I, E, V> {
     fn neighbors(&self, id: I) -> Self::NeighborIter<'_> {
         let (row, column) = self.coords_of(id);
         self.neighbors_of(row, column)
-            .map(|(row, column)| self.get(row, column).unwrap())
+            .map(|(row, column)| self.at(row, column).unwrap())
     }
 
     fn has_vertex(&self, id: I) -> bool {
@@ -129,7 +149,7 @@ impl<I: Index, E, V> EdgeProvider<I> for Grid<I, E, V> {
     fn outbound(&self, id: I) -> Self::OutboundIter<'_> {
         let (row, column) = self.coords_of(id);
         self.neighbors_of(row, column)
-            .map(move |(row, column)| (id, self.get(row, column).unwrap()))
+            .map(move |(row, column)| (id, self.at(row, column).unwrap()))
     }
 
     fn has_edge(&self, source: I, target: I) -> bool {
