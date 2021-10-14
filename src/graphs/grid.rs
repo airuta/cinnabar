@@ -1,6 +1,5 @@
-use crate::Edges;
+use crate::providers::*;
 use crate::Index;
-use crate::Vertices;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::default::Default;
@@ -88,9 +87,9 @@ impl<I: Index, E, V> Grid<I, E, V> {
     }
 }
 
-// Vertices provider
+// Vertex provider
 
-impl<I: Index, E, V> Vertices<I> for Grid<I, E, V> {
+impl<I: Index, E, V> VertexProvider<I> for Grid<I, E, V> {
     type VertexIter<'a> = impl Iterator<Item = I>;
     type NeighborIter<'a> = impl Iterator<Item = I>;
 
@@ -98,7 +97,7 @@ impl<I: Index, E, V> Vertices<I> for Grid<I, E, V> {
         self.vertices.len()
     }
 
-    fn nodes(&self) -> Self::VertexIter<'_> {
+    fn vertices(&self) -> Self::VertexIter<'_> {
         self.vertices.keys().copied()
     }
 
@@ -113,11 +112,11 @@ impl<I: Index, E, V> Vertices<I> for Grid<I, E, V> {
     }
 }
 
-// Edges provider
+// Edge provider
 
-impl<I: Index, E, V> Edges<I> for Grid<I, E, V> {
+impl<I: Index, E, V> EdgeProvider<I> for Grid<I, E, V> {
     type EdgeIter<'a> = impl Iterator<Item = (I, I)>;
-    type OutIter<'a> = impl Iterator<Item = (I, I)>;
+    type OutboundIter<'a> = impl Iterator<Item = (I, I)>;
 
     fn size(&self) -> usize {
         self.edges.len()
@@ -127,7 +126,7 @@ impl<I: Index, E, V> Edges<I> for Grid<I, E, V> {
         self.edges.keys().copied()
     }
 
-    fn out(&self, id: I) -> Self::OutIter<'_> {
+    fn outbound(&self, id: I) -> Self::OutboundIter<'_> {
         let (row, column) = self.coords_of(id);
         self.neighbors_of(row, column)
             .map(move |(row, column)| (id, self.get(row, column).unwrap()))
