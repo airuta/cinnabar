@@ -174,7 +174,7 @@ impl<I: Index, E, V> VertexWalk<I> for Grid<I, E, V> {
     where
         F: FnMut(I) -> Option<I>,
     {
-        let mut current = start;
-        std::iter::from_fn(move || step(current).map(|id| std::mem::replace(&mut current, id)))
+        let mut current = Some(start);
+        std::iter::from_fn(move || current.and_then(|id| std::mem::replace(&mut current, step(id))))
     }
 }
