@@ -8,6 +8,7 @@ mod mutators;
 mod providers;
 
 pub mod graphs;
+pub mod utils;
 
 pub use counter::Counter;
 pub use edge::Edge;
