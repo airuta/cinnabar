@@ -162,7 +162,8 @@ impl<I: Index, E, V> EdgeProvider<I> for Grid<I, E, V> {
     }
 
     fn has_edge(&self, source: I, target: I) -> bool {
-        self.edges.contains_key(&(source, target))
+        let edge = (source, target);
+        self.edges.contains_key(&edge) || self.edges.contains_key(&edge.rev())
     }
 }
 
