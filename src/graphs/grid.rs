@@ -1,6 +1,6 @@
-use crate::providers::*;
 use crate::utils::Reverse;
 use crate::Index;
+use crate::{providers::*, VertexWalk};
 
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -163,5 +163,18 @@ impl<I: Index, E, V> EdgeProvider<I> for Grid<I, E, V> {
 
     fn has_edge(&self, source: I, target: I) -> bool {
         self.edges.contains_key(&(source, target))
+    }
+}
+
+// Walker interface
+
+impl<I: Index, E, V> VertexWalk<I> for Grid<I, E, V> {
+    type Iter<F> = impl Iterator<Item = I>;
+    fn walk<F>(&self, start: I, mut step: F) -> Self::Iter<F>
+    where
+        F: FnMut(I) -> Option<I>,
+    {
+        let mut current = start;
+        std::iter::from_fn(move || step(current).map(|id| std::mem::replace(&mut current, id)))
     }
 }

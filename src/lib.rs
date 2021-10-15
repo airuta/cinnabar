@@ -6,6 +6,7 @@ mod edge;
 mod index;
 mod mutators;
 mod providers;
+mod walk;
 
 pub mod graphs;
 pub mod utils;
@@ -15,3 +16,4 @@ pub use edge::Edge;
 pub use index::Index;
 pub use mutators::*;
 pub use providers::*;
+pub use walk::*;
