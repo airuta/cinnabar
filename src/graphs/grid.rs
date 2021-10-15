@@ -20,8 +20,8 @@ where
     E: Default,
     V: Default,
 {
-    pub fn new(rows: i32, columns: i32) -> Self {
-        Self::construct(rows, columns).wireup()
+    pub fn new(rows: usize, columns: usize) -> Self {
+        Self::construct(rows as i32, columns as i32).wireup()
     }
 
     fn construct(rows: i32, columns: i32) -> Self {
