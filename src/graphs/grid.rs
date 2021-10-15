@@ -1,5 +1,7 @@
 use crate::providers::*;
+use crate::utils::Reverse;
 use crate::Index;
+
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::default::Default;
@@ -75,11 +77,18 @@ impl<I: Index, E, V> Grid<I, E, V> {
     }
 
     pub fn get_edge(&self, a: I, b: I) -> Option<&E> {
-        self.edges.get(&(a, b))
+        let edge = (a, b);
+        self.edges
+            .get(&edge)
+            .or_else(|| self.edges.get(&edge.rev()))
     }
 
     pub fn get_edge_mut(&mut self, a: I, b: I) -> Option<&mut E> {
-        self.edges.get_mut(&(a, b))
+        let edge = (a, b);
+        match self.edges.contains_key(&edge) {
+            true => self.edges.get_mut(&edge),
+            _ => self.edges.get_mut(&edge.rev()),
+        }
     }
 }
 
