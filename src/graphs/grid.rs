@@ -54,7 +54,7 @@ where
                 self.edges.insert((a, b), E::default());
             }
         }
-        for column in 0..self.rows as usize {
+        for column in 0..self.columns as usize {
             for (a, b) in (0..self.rows as usize).tuple_windows() {
                 let a = self.grid[a][column];
                 let b = self.grid[b][column];
