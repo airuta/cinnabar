@@ -165,6 +165,19 @@ impl<I: Copy> Traversal<I> for Grid<I> {
     }
 }
 
+impl<I: Copy + Hash + Eq> Grid<I> {
+    pub fn traverse_by_row(&self) -> impl Iterator<Item = I> + '_ {
+        let start = self.at(0, 0).unwrap();
+        let last_row = self.rows - 1;
+        let last_col = self.columns - 1;
+        self.traverse(start, move |id| match self.coords_of(id).unwrap() {
+            Coords(row, col) if row == last_row && col == last_col => None,
+            Coords(row, col) if col == last_col => self.at(row + 1, 0),
+            Coords(row, col) => self.at(row, col + 1),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
