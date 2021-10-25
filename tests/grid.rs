@@ -1,14 +1,14 @@
+use cinnabar::graphs::grid::Coords;
+use cinnabar::graphs::Grid;
 use cinnabar::Counter;
 use cinnabar::EdgeProvider;
 use cinnabar::VertexProvider;
 use cinnabar::VertexWalk;
 
-type Grid = cinnabar::graphs::Grid<Counter, (), ()>;
-
 const ROWS: usize = 3;
 const COLS: usize = 4;
 
-fn create_grid() -> Grid {
+fn create_grid() -> Grid<Counter> {
     Grid::new(ROWS, COLS)
 }
 
@@ -32,9 +32,9 @@ fn grid_walk_should_visit_all_vertices() {
     #[allow(clippy::needless_collect)]
     let ids = grid
         .walk(start, |id| {
-            const MAX_ROW: i32 = ROWS as i32 - 1;
-            const MAX_COL: i32 = COLS as i32 - 1;
-            let (row, col) = grid.coords_of(id);
+            const MAX_ROW: usize = ROWS - 1;
+            const MAX_COL: usize = COLS - 1;
+            let Coords(row, col) = grid.coords_of(id)?;
             match (row, col) {
                 (MAX_ROW, MAX_COL) => None,
                 (row, MAX_COL) => grid.at(row + 1, 0),
@@ -45,7 +45,7 @@ fn grid_walk_should_visit_all_vertices() {
 
     for i in 0..ROWS {
         for j in 0..COLS {
-            let id = grid.at(i as i32, j as i32).unwrap();
+            let id = grid.at(i, j).unwrap();
             assert!(ids.contains(&id));
         }
     }
