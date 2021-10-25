@@ -4,7 +4,7 @@
 mod counter;
 mod index;
 mod providers;
-mod walk;
+mod traversal;
 
 pub mod graphs;
 pub mod utils;
@@ -14,5 +14,5 @@ pub mod prelude {
     pub use counter::Counter;
     pub use index::Index;
     pub use providers::*;
-    pub use walk::*;
+    pub use traversal::Traversal;
 }

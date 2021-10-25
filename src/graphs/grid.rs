@@ -1,5 +1,6 @@
 use crate::index::Index;
-use crate::{providers::*, walk::VertexWalk};
+use crate::providers::*;
+use crate::traversal::*;
 
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -152,16 +153,15 @@ impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
     }
 }
 
-// Walker interface
+// Traversal interface
 
-impl<I: Copy> VertexWalk<I> for Grid<I> {
+impl<I: Copy> Traversal<I> for Grid<I> {
     type Iter<F> = impl Iterator<Item = I>;
-    fn walk<F>(&self, start: I, mut step: F) -> Self::Iter<F>
+    fn traverse<F>(&self, start: I, step: F) -> Self::Iter<F>
     where
         F: FnMut(I) -> Option<I>,
     {
-        let mut current = Some(start);
-        std::iter::from_fn(move || current.and_then(|id| std::mem::replace(&mut current, step(id))))
+        traverse(start, step)
     }
 }
 

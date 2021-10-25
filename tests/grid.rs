@@ -22,13 +22,13 @@ fn grid_should_have_correct_size() {
 }
 
 #[test]
-fn grid_walk_should_visit_all_vertices() {
+fn grid_traverse_should_visit_all_vertices() {
     let grid = create_grid();
     let start = grid.at(0, 0).unwrap();
 
     #[allow(clippy::needless_collect)]
     let ids = grid
-        .walk(start, |id| {
+        .traverse(start, |id| {
             const MAX_ROW: usize = ROWS - 1;
             const MAX_COL: usize = COLS - 1;
             let Coords(row, col) = grid.coords_of(id)?;
