@@ -1,9 +1,6 @@
 use cinnabar::graphs::grid::Coords;
 use cinnabar::graphs::Grid;
-use cinnabar::Counter;
-use cinnabar::EdgeProvider;
-use cinnabar::VertexProvider;
-use cinnabar::VertexWalk;
+use cinnabar::prelude::*;
 
 const ROWS: usize = 3;
 const COLS: usize = 4;

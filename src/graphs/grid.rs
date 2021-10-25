@@ -1,6 +1,6 @@
+use crate::index::Index;
 use crate::utils::Reverse;
-use crate::Index;
-use crate::{providers::*, VertexWalk};
+use crate::{providers::*, walk::VertexWalk};
 
 use itertools::Itertools;
 use std::collections::HashMap;

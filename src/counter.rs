@@ -1,4 +1,4 @@
-use crate::Index;
+use crate::index::Index;
 use std::hash::Hash;
 use std::sync::atomic;
 

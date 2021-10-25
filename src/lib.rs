@@ -9,7 +9,10 @@ mod walk;
 pub mod graphs;
 pub mod utils;
 
-pub use counter::Counter;
-pub use index::Index;
-pub use providers::*;
-pub use walk::*;
+pub mod prelude {
+    use super::*;
+    pub use counter::Counter;
+    pub use index::Index;
+    pub use providers::*;
+    pub use walk::*;
+}
