@@ -1,5 +1,4 @@
 use crate::index::Index;
-use crate::utils::Reverse;
 use crate::{providers::*, walk::VertexWalk};
 
 use itertools::Itertools;
@@ -58,7 +57,7 @@ impl<I: Copy + Hash + Eq> Grid<I> {
             .map(move |(dx, dy)| (dy as usize + row, dx as usize + column))
     }
 
-    fn edge_on(&self, a: I, b: I) -> Option<(Coords, Coords)> {
+    fn edge_coords(&self, a: I, b: I) -> Option<(Coords, Coords)> {
         let a = self.coords_of(a)?;
         let b = self.coords_of(b)?;
         Some((a, b))
@@ -147,7 +146,7 @@ impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
     }
 
     fn has_edge(&self, source: I, target: I) -> bool {
-        self.edge_on(source, target)
+        self.edge_coords(source, target)
             .map(|(a, b)| adjacent(a.1, a.0, b.1, b.0))
             .unwrap_or_default()
     }
