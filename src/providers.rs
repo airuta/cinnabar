@@ -4,7 +4,7 @@ pub trait VertexProvider<I> {
 
     fn order(&self) -> usize;
     fn vertices(&self) -> Self::VertexIter<'_>;
-    fn neighbors(&self, id: I) -> Self::NeighborIter<'_>;
+    fn neighbors(&self, id: I) -> Option<Self::NeighborIter<'_>>;
     fn has_vertex(&self, id: I) -> bool;
 }
 
@@ -14,6 +14,6 @@ pub trait EdgeProvider<I> {
 
     fn size(&self) -> usize;
     fn edges(&self) -> Self::EdgeIter<'_>;
-    fn outbound(&self, id: I) -> Self::OutboundIter<'_>;
+    fn outbound(&self, id: I) -> Option<Self::OutboundIter<'_>>;
     fn has_edge(&self, source: I, target: I) -> bool;
 }
