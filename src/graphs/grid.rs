@@ -8,7 +8,7 @@ use std::hash::Hash;
 use std::ops::Neg;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Coords(usize, usize);
+pub struct Coords(pub usize, pub usize);
 
 pub struct Grid<I> {
     rows: usize,
@@ -68,7 +68,7 @@ impl<I: Copy + Hash + Eq> Grid<I> {
 fn inside(value: usize, offset: i32, high: usize) -> bool {
     let range = match offset {
         _ if offset >= 0 => 0..high - offset as usize,
-        _ => offset.neg() as usize..high,
+        _ => offset.neg() as usize..high + offset.neg() as usize,
     };
     range.contains(&value)
 }
@@ -163,5 +163,36 @@ impl<I: Copy> VertexWalk<I> for Grid<I> {
     {
         let mut current = Some(start);
         std::iter::from_fn(move || current.and_then(|id| std::mem::replace(&mut current, step(id))))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inside_test() {
+        assert!(inside(1, -1, 5));
+        assert!(inside(5, -1, 5));
+        assert!(inside(0, 1, 5));
+        assert!(inside(3, 1, 5));
+        assert!(!inside(4, 1, 5));
+        assert!(!inside(0, -1, 5));
+        assert!(!inside(5, 1, 5));
+        assert!(!inside(6, 1, 5));
+    }
+
+    #[test]
+    fn adjacent_test() {
+        assert!(adjacent(5, 3, 5, 4));
+        assert!(adjacent(5, 4, 5, 3));
+        assert!(adjacent(3, 5, 4, 5));
+        assert!(adjacent(4, 5, 3, 5));
+        assert!(!adjacent(4, 5, 4, 5));
+        assert!(!adjacent(3, 5, 6, 5));
+        assert!(!adjacent(6, 5, 3, 5));
+        assert!(!adjacent(5, 3, 5, 6));
+        assert!(!adjacent(5, 6, 5, 3));
+        assert!(!adjacent(5, 3, 6, 4));
     }
 }
