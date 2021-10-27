@@ -19,6 +19,14 @@ pub struct Grid<I> {
 
 impl<I: Index> Grid<I> {
     pub fn new(rows: usize, columns: usize) -> Self {
+        Self::with_inspector(rows, columns, |_, _, _| ())
+    }
+
+    pub fn with_inspector(
+        rows: usize,
+        columns: usize,
+        mut inspector: impl FnMut(usize, usize, I),
+    ) -> Self {
         let mut coords = HashMap::new();
         let mut grid = Vec::with_capacity(rows);
         for r in 0..rows {
@@ -27,6 +35,7 @@ impl<I: Index> Grid<I> {
                 let id = Index::generate();
                 coords.insert(id, Coords(r, c));
                 row.push(id);
+                inspector(r, c, id);
             }
             grid.push(row)
         }
