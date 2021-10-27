@@ -7,11 +7,7 @@ pub trait VertexProvider<I> {
 }
 
 pub trait EdgeProvider<I> {
-    type EdgeIter<'a>: Iterator<Item = (I, I)>;
-    type OutboundIter<'a>: Iterator<Item = (I, I)>;
-
+    type Edges<'a>: Topology<Item = (I, I)>;
     fn size(&self) -> usize;
-    fn edges(&self) -> Self::EdgeIter<'_>;
-    fn outbound(&self, id: I) -> Option<Self::OutboundIter<'_>>;
-    fn has_edge(&self, source: I, target: I) -> bool;
+    fn edges(&self) -> Self::Edges<'_>;
 }

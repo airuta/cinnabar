@@ -94,7 +94,7 @@ fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
     }
 }
 
-// Vertex provider
+// Vertex and edge providers
 
 impl<I: Copy + Hash + Eq> VertexProvider<I> for Grid<I> {
     type Vertices<'a> = impl Topology<Item = I>;
@@ -108,6 +108,18 @@ impl<I: Copy + Hash + Eq> VertexProvider<I> for Grid<I> {
     }
 }
 
+impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
+    type Edges<'a> = impl Topology<Item = (I, I)>;
+
+    fn size(&self) -> usize {
+        self.rows * (self.columns - 1) + self.columns * (self.rows - 1)
+    }
+
+    fn edges(&self) -> Self::Edges<'_> {
+        Edges { grid: self }
+    }
+}
+
 // Vertex topology
 
 struct Vertices<'a, I> {
@@ -116,14 +128,14 @@ struct Vertices<'a, I> {
 
 impl<'a, I: Copy + Hash + Eq> Topology for Vertices<'a, I> {
     type Item = I;
-    type ItemIter = impl Iterator<Item = Self::Item>;
-    type AdjacentIter = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
 
-    fn iter(&self) -> Self::ItemIter {
+    fn iter(&self) -> Self::ItemIter<'_> {
         self.grid.coords.keys().copied()
     }
 
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter> {
+    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
         let Coords(row, column) = self.grid.coords_of(item)?;
         let iter = self
             .grid
@@ -137,47 +149,63 @@ impl<'a, I: Copy + Hash + Eq> Topology for Vertices<'a, I> {
     }
 }
 
-// Edge provider
+// Edge topology
 
-impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
-    type EdgeIter<'a> = impl Iterator<Item = (I, I)>;
-    type OutboundIter<'a> = impl Iterator<Item = (I, I)>;
+struct Edges<'a, I> {
+    grid: &'a Grid<I>,
+}
 
-    fn size(&self) -> usize {
-        self.rows * (self.columns - 1) + self.columns * (self.rows - 1)
-    }
+impl<'a, I: Copy + Hash + Eq> Topology for Edges<'a, I> {
+    type Item = (I, I);
+    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
 
-    fn edges(&self) -> Self::EdgeIter<'_> {
-        let by_rows = (0..self.rows).flat_map(move |row| {
-            (0..self.columns).tuple_windows().map(move |(a, b)| {
-                let a = self.grid[row][a];
-                let b = self.grid[row][b];
+    fn iter(&self) -> Self::ItemIter<'_> {
+        let grid = &self.grid.grid;
+        let by_rows = (0..self.grid.rows).flat_map(move |row| {
+            (0..self.grid.columns).tuple_windows().map(move |(a, b)| {
+                let a = grid[row][a];
+                let b = grid[row][b];
                 (a, b)
             })
         });
-        let by_columns = (0..self.columns).flat_map(move |column| {
-            (0..self.rows).tuple_windows().map(move |(a, b)| {
-                let a = self.grid[a][column];
-                let b = self.grid[b][column];
+        let by_columns = (0..self.grid.columns).flat_map(move |column| {
+            (0..self.grid.rows).tuple_windows().map(move |(a, b)| {
+                let a = grid[a][column];
+                let b = grid[b][column];
                 (a, b)
             })
         });
         by_rows.chain(by_columns)
     }
 
-    fn outbound(&self, id: I) -> Option<Self::OutboundIter<'_>> {
-        let Coords(row, column) = self.coords_of(id)?;
-        let iter = self
-            .neighbors_of(row, column)
-            .map(move |(row, column)| (id, self.at(row, column).unwrap()));
-        Some(iter)
+    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+        let (a, b) = item;
+        let a_neighbors = adjacent_vertices(self.grid, a, b)?;
+        let b_neighbors = adjacent_vertices(self.grid, b, a)?;
+        Some(a_neighbors.chain(b_neighbors))
     }
 
-    fn has_edge(&self, source: I, target: I) -> bool {
-        self.edge_coords(source, target)
+    fn contains(&self, item: Self::Item) -> bool {
+        self.grid
+            .edge_coords(item.0, item.1)
             .map(|(a, b)| adjacent(a.1, a.0, b.1, b.0))
             .unwrap_or_default()
     }
+}
+
+fn adjacent_vertices<I: Copy + Hash + Eq>(
+    grid: &Grid<I>,
+    source: I,
+    exclude: I,
+) -> Option<impl Iterator<Item = (I, I)> + '_> {
+    let Coords(row, column) = grid.coords_of(source)?;
+    let vertices = grid
+        .neighbors_of(row, column)
+        .map(|(row, column)| grid.at(row, column).unwrap())
+        .filter(move |target| *target != exclude)
+        .map(move |target| (source, target));
+    Some(vertices)
 }
 
 // Additional traversals
