@@ -61,18 +61,16 @@ impl<I: Copy + Hash + Eq> Grid<I> {
         self.coords.get(&id).copied()
     }
 
-    fn neighbors_of(&self, row: usize, column: usize) -> impl Iterator<Item = (usize, usize)> + '_ {
+    pub fn neighbors_of(
+        &self,
+        row: usize,
+        column: usize,
+    ) -> impl Iterator<Item = (usize, usize)> + '_ {
         [(1, 0), (-1, 0), (0, 1), (0, -1)]
             .into_iter()
             .filter(move |(dx, _)| inside(column, *dx, self.columns))
             .filter(move |(_, dy)| inside(row, *dy, self.rows))
             .map(move |(dx, dy)| (dy as usize + row, dx as usize + column))
-    }
-
-    fn edge_coords(&self, a: I, b: I) -> Option<(Coords, Coords)> {
-        let a = self.coords_of(a)?;
-        let b = self.coords_of(b)?;
-        Some((a, b))
     }
 }
 
@@ -187,8 +185,7 @@ impl<'a, I: Copy + Hash + Eq> Topology for Edges<'a, I> {
     }
 
     fn contains(&self, item: Self::Item) -> bool {
-        self.grid
-            .edge_coords(item.0, item.1)
+        edge_coords(self.grid, item.0, item.1)
             .map(|(a, b)| adjacent(a.1, a.0, b.1, b.0))
             .unwrap_or_default()
     }
@@ -206,6 +203,12 @@ fn adjacent_vertices<I: Copy + Hash + Eq>(
         .filter(move |target| *target != exclude)
         .map(move |target| (source, target));
     Some(vertices)
+}
+
+fn edge_coords<I: Copy + Hash + Eq>(grid: &Grid<I>, a: I, b: I) -> Option<(Coords, Coords)> {
+    let a = grid.coords_of(a)?;
+    let b = grid.coords_of(b)?;
+    Some((a, b))
 }
 
 // Additional traversals
