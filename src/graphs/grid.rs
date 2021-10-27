@@ -26,7 +26,7 @@ impl<I: Index> Grid<I> {
     pub fn with_inspector(
         rows: usize,
         columns: usize,
-        mut inspector: impl FnMut(usize, usize, I),
+        mut inspector: impl FnMut(I, usize, usize),
     ) -> Self {
         let mut coords = HashMap::new();
         let mut grid = Vec::with_capacity(rows);
@@ -36,7 +36,7 @@ impl<I: Index> Grid<I> {
                 let id = Index::generate();
                 coords.insert(id, Coords(r, c));
                 row.push(id);
-                inspector(r, c, id);
+                inspector(id, r, c);
             }
             grid.push(row)
         }

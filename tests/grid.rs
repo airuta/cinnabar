@@ -38,7 +38,7 @@ fn grid_traverse_should_visit_all_vertices() {
 #[test]
 fn grid_construction_can_be_inspected() {
     let mut inspector_ids = HashSet::new();
-    let grid = Grid::with_inspector(ROWS, COLS, |_, _, id: Counter| {
+    let grid = Grid::with_inspector(ROWS, COLS, |id: Counter, _, _| {
         inspector_ids.insert(id);
     });
     let traversal_ids = grid.traverse_by_row().collect::<HashSet<_>>();
