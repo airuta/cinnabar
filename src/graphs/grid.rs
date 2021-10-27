@@ -1,12 +1,10 @@
-use crate::counter::Counter;
-use crate::index::Index;
+use crate::index::*;
 use crate::providers::*;
 use crate::topology::*;
 use crate::traversal::*;
 
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::ops::Neg;
 
 #[derive(Copy, Clone, Debug)]
@@ -19,7 +17,7 @@ pub struct Grid<I = Counter> {
     coords: HashMap<I, Coords>,
 }
 
-impl<I: Index> Grid<I> {
+impl<I: Unique + Index> Grid<I> {
     pub fn new(rows: usize, columns: usize) -> Self {
         Self::with_inspector(rows, columns, |_, _, _| ())
     }
@@ -34,7 +32,7 @@ impl<I: Index> Grid<I> {
         for r in 0..rows {
             let mut row = Vec::with_capacity(columns);
             for c in 0..columns {
-                let id = Index::generate();
+                let id = Unique::generate();
                 coords.insert(id, Coords(r, c));
                 row.push(id);
                 inspector(id, r, c);
@@ -52,7 +50,7 @@ impl<I: Index> Grid<I> {
 
 // Grid-specific interface
 
-impl<I: Copy + Hash + Eq> Grid<I> {
+impl<I: Index> Grid<I> {
     pub fn at(&self, row: usize, column: usize) -> Option<I> {
         self.grid.get(row).and_then(|row| row.get(column)).copied()
     }
@@ -94,7 +92,7 @@ fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
 
 // Vertex and edge providers
 
-impl<I: Copy + Hash + Eq> VertexProvider<I> for Grid<I> {
+impl<I: Index> VertexProvider<I> for Grid<I> {
     type Vertices<'a> = impl Topology<Item = I>;
 
     fn order(&self) -> usize {
@@ -106,7 +104,7 @@ impl<I: Copy + Hash + Eq> VertexProvider<I> for Grid<I> {
     }
 }
 
-impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
+impl<I: Index> EdgeProvider<I> for Grid<I> {
     type Edges<'a> = impl Topology<Item = (I, I)>;
 
     fn size(&self) -> usize {
@@ -124,7 +122,7 @@ struct Vertices<'a, I> {
     grid: &'a Grid<I>,
 }
 
-impl<'a, I: Copy + Hash + Eq> Topology for Vertices<'a, I> {
+impl<'a, I: Index> Topology for Vertices<'a, I> {
     type Item = I;
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
     type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
@@ -153,7 +151,7 @@ struct Edges<'a, I> {
     grid: &'a Grid<I>,
 }
 
-impl<'a, I: Copy + Hash + Eq> Topology for Edges<'a, I> {
+impl<'a, I: Index> Topology for Edges<'a, I> {
     type Item = (I, I);
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
     type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
@@ -191,7 +189,7 @@ impl<'a, I: Copy + Hash + Eq> Topology for Edges<'a, I> {
     }
 }
 
-fn adjacent_vertices<I: Copy + Hash + Eq>(
+fn adjacent_vertices<I: Index>(
     grid: &Grid<I>,
     source: I,
     exclude: I,
@@ -205,7 +203,7 @@ fn adjacent_vertices<I: Copy + Hash + Eq>(
     Some(vertices)
 }
 
-fn edge_coords<I: Copy + Hash + Eq>(grid: &Grid<I>, a: I, b: I) -> Option<(Coords, Coords)> {
+fn edge_coords<I: Index>(grid: &Grid<I>, a: I, b: I) -> Option<(Coords, Coords)> {
     let a = grid.coords_of(a)?;
     let b = grid.coords_of(b)?;
     Some((a, b))
@@ -213,7 +211,7 @@ fn edge_coords<I: Copy + Hash + Eq>(grid: &Grid<I>, a: I, b: I) -> Option<(Coord
 
 // Additional traversals
 
-impl<I: Copy + Hash + Eq> Grid<I> {
+impl<I: Index> Grid<I> {
     pub fn traverse_by_rows(&self) -> impl Iterator<Item = I> + '_ {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
