@@ -1,6 +1,7 @@
 use crate::counter::Counter;
 use crate::index::Index;
 use crate::providers::*;
+use crate::topology::*;
 use crate::traversal::*;
 
 use itertools::Itertools;
@@ -96,27 +97,43 @@ fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
 // Vertex provider
 
 impl<I: Copy + Hash + Eq> VertexProvider<I> for Grid<I> {
-    type VertexIter<'a> = impl Iterator<Item = I>;
-    type NeighborIter<'a> = impl Iterator<Item = I>;
+    type Vertices<'a> = impl Topology<Item = I>;
 
     fn order(&self) -> usize {
         self.coords.len()
     }
 
-    fn vertices(&self) -> Self::VertexIter<'_> {
-        self.coords.keys().copied()
+    fn vertices(&self) -> Self::Vertices<'_> {
+        Vertices { grid: self }
+    }
+}
+
+// Vertex topology
+
+struct Vertices<'a, I> {
+    grid: &'a Grid<I>,
+}
+
+impl<'a, I: Copy + Hash + Eq> Topology for Vertices<'a, I> {
+    type Item = I;
+    type ItemIter = impl Iterator<Item = Self::Item>;
+    type AdjacentIter = impl Iterator<Item = Self::Item>;
+
+    fn iter(&self) -> Self::ItemIter {
+        self.grid.coords.keys().copied()
     }
 
-    fn neighbors(&self, id: I) -> Option<Self::NeighborIter<'_>> {
-        let Coords(row, column) = self.coords_of(id)?;
+    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter> {
+        let Coords(row, column) = self.grid.coords_of(item)?;
         let iter = self
+            .grid
             .neighbors_of(row, column)
-            .map(|(row, column)| self.at(row, column).unwrap());
+            .map(|(row, column)| self.grid.at(row, column).unwrap());
         Some(iter)
     }
 
-    fn has_vertex(&self, id: I) -> bool {
-        self.coords.contains_key(&id)
+    fn contains(&self, item: Self::Item) -> bool {
+        self.grid.coords.contains_key(&item)
     }
 }
 
@@ -163,24 +180,14 @@ impl<I: Copy + Hash + Eq> EdgeProvider<I> for Grid<I> {
     }
 }
 
-// Traversal interface
-
-impl<I: Copy> Traversal<I> for Grid<I> {
-    type Iter<F> = impl Iterator<Item = I>;
-    fn traverse<F>(&self, start: I, step: F) -> Self::Iter<F>
-    where
-        F: FnMut(I) -> Option<I>,
-    {
-        traverse(start, step)
-    }
-}
+// Additional traversals
 
 impl<I: Copy + Hash + Eq> Grid<I> {
     pub fn traverse_by_rows(&self) -> impl Iterator<Item = I> + '_ {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
         let last_col = self.columns - 1;
-        self.traverse(start, move |id| match self.coords_of(id).unwrap() {
+        traverse(start, move |id| match self.coords_of(id).unwrap() {
             Coords(row, col) if row == last_row && col == last_col => None,
             Coords(row, col) if col == last_col => self.at(row + 1, 0),
             Coords(row, col) => self.at(row, col + 1),

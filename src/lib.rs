@@ -38,6 +38,7 @@
 mod counter;
 mod index;
 mod providers;
+mod topology;
 mod traversal;
 
 pub mod graphs;

@@ -1,11 +1,9 @@
-pub trait VertexProvider<I> {
-    type VertexIter<'a>: Iterator<Item = I>;
-    type NeighborIter<'a>: Iterator<Item = I>;
+use crate::topology::Topology;
 
+pub trait VertexProvider<I> {
+    type Vertices<'a>: Topology<Item = I>;
     fn order(&self) -> usize;
-    fn vertices(&self) -> Self::VertexIter<'_>;
-    fn neighbors(&self, id: I) -> Option<Self::NeighborIter<'_>>;
-    fn has_vertex(&self, id: I) -> bool;
+    fn vertices(&self) -> Self::Vertices<'_>;
 }
 
 pub trait EdgeProvider<I> {
