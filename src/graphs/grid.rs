@@ -1,3 +1,4 @@
+use crate::counter::Counter;
 use crate::index::Index;
 use crate::providers::*;
 use crate::traversal::*;
@@ -10,7 +11,7 @@ use std::ops::Neg;
 #[derive(Copy, Clone, Debug)]
 pub struct Coords(pub usize, pub usize);
 
-pub struct Grid<I> {
+pub struct Grid<I = Counter> {
     rows: usize,
     columns: usize,
     grid: Vec<Vec<I>>,
