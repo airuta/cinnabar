@@ -1,3 +1,6 @@
+//! This modules houses definitions for index traits, as well as predefined implementations
+//! that can be used to avoid rolling out custom indices.
+
 use std::hash::Hash;
 
 mod counter;
