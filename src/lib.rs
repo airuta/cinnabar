@@ -37,11 +37,11 @@
 
 mod counter;
 mod index;
-mod providers;
-mod topology;
-mod traversal;
 
 pub mod graphs;
+pub mod providers;
+pub mod topology;
+pub mod traversal;
 pub mod utils;
 
 /// This module simplifiies the reexport of commonly-used members.
