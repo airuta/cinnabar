@@ -176,7 +176,7 @@ impl<I: Copy> Traversal<I> for Grid<I> {
 }
 
 impl<I: Copy + Hash + Eq> Grid<I> {
-    pub fn traverse_by_row(&self) -> impl Iterator<Item = I> + '_ {
+    pub fn traverse_by_rows(&self) -> impl Iterator<Item = I> + '_ {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
         let last_col = self.columns - 1;

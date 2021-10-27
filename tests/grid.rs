@@ -26,7 +26,7 @@ fn grid_should_have_correct_size() {
 fn grid_traverse_should_visit_all_vertices() {
     let grid = create_grid();
     #[allow(clippy::needless_collect)]
-    let ids = grid.traverse_by_row().collect::<Vec<_>>();
+    let ids = grid.traverse_by_rows().collect::<Vec<_>>();
     for i in 0..ROWS {
         for j in 0..COLS {
             let id = grid.at(i, j).unwrap();
@@ -41,6 +41,6 @@ fn grid_construction_can_be_inspected() {
     let grid = Grid::with_inspector(ROWS, COLS, |id: Counter, _, _| {
         inspector_ids.insert(id);
     });
-    let traversal_ids = grid.traverse_by_row().collect::<HashSet<_>>();
+    let traversal_ids = grid.traverse_by_rows().collect::<HashSet<_>>();
     assert_eq!(inspector_ids, traversal_ids);
 }
