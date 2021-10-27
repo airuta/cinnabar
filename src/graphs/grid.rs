@@ -1,3 +1,5 @@
+//! This module defines a 2D grid graph and its related strcutres.
+
 use crate::index::*;
 use crate::providers::*;
 use crate::topology::*;
@@ -7,9 +9,18 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::Neg;
 
+/// Coordinates of a not in a grid in row-column order.
 #[derive(Copy, Clone, Debug)]
 pub struct Coords(pub usize, pub usize);
 
+/// A 2D grid graph, arranging it's nodes in a rectangular grid. It does not provide any
+/// vertex or edge-related storage for weights. Every vertex is connected to all its
+/// neighbors by a bidirectional edge, where neighborhood is defined as having the same
+/// row or column. In other words, any vertex will have 2, 3, or 4 neighbors at most.
+///
+/// Edges in this graph are not stored directly and thus don't take up memory. Edge topology,
+/// and correspondingly, traversals are available, and can be used to associate edges
+/// with weights.
 pub struct Grid<I = Counter> {
     rows: usize,
     columns: usize,
@@ -17,11 +28,16 @@ pub struct Grid<I = Counter> {
     coords: HashMap<I, Coords>,
 }
 
+/// Construction interface.
 impl<I: Unique + Index> Grid<I> {
+    /// Create a new grid with the given size.
     pub fn new(rows: usize, columns: usize) -> Self {
         Self::with_inspector(rows, columns, |_, _, _| ())
     }
 
+    /// Create a new grid with the given size, calling `inspector` function for
+    /// each created vertex. `inspector` is called with an index of a created vertex
+    /// and its coordinates in row-columns order.
     pub fn with_inspector(
         rows: usize,
         columns: usize,
@@ -48,27 +64,27 @@ impl<I: Unique + Index> Grid<I> {
     }
 }
 
-// Grid-specific interface
-
+/// Grid-specific interface provides several coordinate-related methods.
 impl<I: Index> Grid<I> {
+    /// Return the index of a node at the given coordinates.
     pub fn at(&self, row: usize, column: usize) -> Option<I> {
         self.grid.get(row).and_then(|row| row.get(column)).copied()
     }
 
+    /// Return the coordinates of the node by the given index.
     pub fn coords_of(&self, id: I) -> Option<Coords> {
         self.coords.get(&id).copied()
     }
 
-    pub fn neighbors_of(
-        &self,
-        row: usize,
-        column: usize,
-    ) -> impl Iterator<Item = (usize, usize)> + '_ {
+    /// Return the coordinates of all neighbors to a vertex at the given coordinates.
+    /// This method is primarily used internal buy can be used to simplify handling
+    /// of edge and corner vertices.
+    pub fn neighbors_of(&self, row: usize, column: usize) -> impl Iterator<Item = Coords> + '_ {
         [(1, 0), (-1, 0), (0, 1), (0, -1)]
             .into_iter()
             .filter(move |(dx, _)| inside(column, *dx, self.columns))
             .filter(move |(_, dy)| inside(row, *dy, self.rows))
-            .map(move |(dx, dy)| (dy as usize + row, dx as usize + column))
+            .map(move |(dx, dy)| Coords(dy as usize + row, dx as usize + column))
     }
 }
 
@@ -136,7 +152,7 @@ impl<'a, I: Index> Topology for Vertices<'a, I> {
         let iter = self
             .grid
             .neighbors_of(row, column)
-            .map(|(row, column)| self.grid.at(row, column).unwrap());
+            .map(|Coords(row, column)| self.grid.at(row, column).unwrap());
         Some(iter)
     }
 
@@ -197,7 +213,7 @@ fn adjacent_vertices<I: Index>(
     let Coords(row, column) = grid.coords_of(source)?;
     let vertices = grid
         .neighbors_of(row, column)
-        .map(|(row, column)| grid.at(row, column).unwrap())
+        .map(|Coords(row, column)| grid.at(row, column).unwrap())
         .filter(move |target| *target != exclude)
         .map(move |target| (source, target));
     Some(vertices)
@@ -209,9 +225,10 @@ fn edge_coords<I: Index>(grid: &Grid<I>, a: I, b: I) -> Option<(Coords, Coords)>
     Some((a, b))
 }
 
-// Additional traversals
-
+/// Additional grid-specific traversals.
 impl<I: Index> Grid<I> {
+    /// An additional traversal of the graph's vertices by rows. Each row is processed
+    /// in order, and for each row, indices of all its vertices in order are traversed.
     pub fn traverse_by_rows(&self) -> impl Iterator<Item = I> + '_ {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
