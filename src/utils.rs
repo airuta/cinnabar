@@ -1,5 +1,11 @@
+//! This module is home of various usefuls utils for graph manipulation.
+
+/// Reverse trait provides a way to reverse some bidirectioanl objects such as graph edges.
 pub trait Reverse {
+    /// The type of the reversal output.
     type Output;
+
+    /// Returns the result of reversal.
     fn rev(self) -> Self::Output;
 }
 

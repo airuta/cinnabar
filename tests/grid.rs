@@ -1,14 +1,12 @@
-use cinnabar::Counter;
-use cinnabar::EdgeProvider;
-use cinnabar::VertexProvider;
-use cinnabar::VertexWalk;
+use std::collections::HashSet;
 
-type Grid = cinnabar::graphs::Grid<Counter, (), ()>;
+use cinnabar::graphs::Grid;
+use cinnabar::prelude::*;
 
 const ROWS: usize = 3;
 const COLS: usize = 4;
 
-fn create_grid() -> Grid {
+fn create_grid() -> Grid<Counter> {
     Grid::new(ROWS, COLS)
 }
 
@@ -25,28 +23,24 @@ fn grid_should_have_correct_size() {
 }
 
 #[test]
-fn grid_walk_should_visit_all_vertices() {
+fn grid_traverse_should_visit_all_vertices() {
     let grid = create_grid();
-    let start = grid.at(0, 0).unwrap();
-
     #[allow(clippy::needless_collect)]
-    let ids = grid
-        .walk(start, |id| {
-            const MAX_ROW: i32 = ROWS as i32 - 1;
-            const MAX_COL: i32 = COLS as i32 - 1;
-            let (row, col) = grid.coords_of(id);
-            match (row, col) {
-                (MAX_ROW, MAX_COL) => None,
-                (row, MAX_COL) => grid.at(row + 1, 0),
-                _ => grid.at(row, col + 1),
-            }
-        })
-        .collect::<Vec<_>>();
-
+    let ids = grid.traverse_by_rows().collect::<Vec<_>>();
     for i in 0..ROWS {
         for j in 0..COLS {
-            let id = grid.at(i as i32, j as i32).unwrap();
+            let id = grid.at(i, j).unwrap();
             assert!(ids.contains(&id));
         }
     }
+}
+
+#[test]
+fn grid_construction_can_be_inspected() {
+    let mut inspector_ids = HashSet::new();
+    let grid = Grid::with_inspector(ROWS, COLS, |id: Counter, _, _| {
+        inspector_ids.insert(id);
+    });
+    let traversal_ids = grid.traverse_by_rows().collect::<HashSet<_>>();
+    assert_eq!(inspector_ids, traversal_ids);
 }

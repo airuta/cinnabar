@@ -1,19 +1,31 @@
-pub trait VertexProvider<I> {
-    type VertexIter<'a>: Iterator<Item = I>;
-    type NeighborIter<'a>: Iterator<Item = I>;
+//! This modules defines tratis the provide topologies for a graph. In general, a graph
+//! implementation provides two topologie, one for edges and one for vertices. They are
+//! typically represented by separate structs implementing the [`Topology`] trait.
 
+use crate::topology::Topology;
+
+/// This trait defines methods to access overall number of vertices (graph order) and
+/// a vertex topology.
+pub trait VertexProvider<I> {
+    /// A particular implementation of a topology trait for vertices.
+    type Vertices<'a>: Topology<Item = I>;
+
+    /// `order` retruns the number of vertices in a graph.
     fn order(&self) -> usize;
-    fn vertices(&self) -> Self::VertexIter<'_>;
-    fn neighbors(&self, id: I) -> Self::NeighborIter<'_>;
-    fn has_vertex(&self, id: I) -> bool;
+
+    /// `vertices` returns the instance of vertex topology.
+    fn vertices(&self) -> Self::Vertices<'_>;
 }
 
+/// This trait defines methods to access overall number of edges (graph size) and
+/// a vertex topology.
 pub trait EdgeProvider<I> {
-    type EdgeIter<'a>: Iterator<Item = (I, I)>;
-    type OutboundIter<'a>: Iterator<Item = (I, I)>;
+    /// A particular implementation of a topology trait for edges.
+    type Edges<'a>: Topology<Item = (I, I)>;
 
+    /// `size` retruns the number of edges in a graph.
     fn size(&self) -> usize;
-    fn edges(&self) -> Self::EdgeIter<'_>;
-    fn outbound(&self, id: I) -> Self::OutboundIter<'_>;
-    fn has_edge(&self, source: I, target: I) -> bool;
+
+    /// `vertices` returns the instance of edge topology.
+    fn edges(&self) -> Self::Edges<'_>;
 }
