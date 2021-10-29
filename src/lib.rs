@@ -34,6 +34,7 @@
 
 #![feature(type_alias_impl_trait)]
 #![feature(generic_associated_types)]
+#![feature(mixed_integer_ops)]
 
 pub mod graphs;
 pub mod index;

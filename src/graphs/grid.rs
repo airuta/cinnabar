@@ -4,10 +4,10 @@ use crate::index::*;
 use crate::providers::*;
 use crate::topology::*;
 use crate::traversal::*;
+use crate::utils::{Bifunctor, Collapse};
 
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::ops::Neg;
 
 /// Coordinates of a not in a grid in row-column order.
 #[derive(Copy, Clone, Debug)]
@@ -79,21 +79,18 @@ impl<I: Index> Grid<I> {
     /// Return the coordinates of all neighbors to a vertex at the given coordinates.
     /// This method is primarily used internal buy can be used to simplify handling
     /// of edge and corner vertices.
-    pub fn neighbors_of(&self, row: usize, column: usize) -> impl Iterator<Item = Coords> + '_ {
+    pub fn neighbors_of(&self, row: usize, col: usize) -> impl Iterator<Item = Coords> + '_ {
         [(1, 0), (-1, 0), (0, 1), (0, -1)]
             .into_iter()
-            .filter(move |(dx, _)| inside(column, *dx, self.columns))
-            .filter(move |(_, dy)| inside(row, *dy, self.rows))
-            .map(move |(dx, dy)| Coords(dy as usize + row, dx as usize + column))
+            .filter_map(move |pair| {
+                pair.bimap(
+                    |dy| row.checked_add_signed(dy),
+                    |dx| col.checked_add_signed(dx),
+                )
+                .collapse(Coords)
+            })
+            .filter(|coords| coords.0 < self.rows && coords.1 < self.columns)
     }
-}
-
-fn inside(value: usize, offset: i32, high: usize) -> bool {
-    let range = match offset {
-        _ if offset >= 0 => 0..high - offset as usize,
-        _ => offset.neg() as usize..high + offset.neg() as usize,
-    };
-    range.contains(&value)
 }
 
 fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
@@ -244,18 +241,6 @@ impl<I: Index> Grid<I> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn inside_test() {
-        assert!(inside(1, -1, 5));
-        assert!(inside(5, -1, 5));
-        assert!(inside(0, 1, 5));
-        assert!(inside(3, 1, 5));
-        assert!(!inside(4, 1, 5));
-        assert!(!inside(0, -1, 5));
-        assert!(!inside(5, 1, 5));
-        assert!(!inside(6, 1, 5));
-    }
 
     #[test]
     fn adjacent_test() {
