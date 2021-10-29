@@ -20,8 +20,11 @@ pub trait VertexProvider<I> {
 /// This trait defines methods to access overall number of edges (graph size) and
 /// a vertex topology.
 pub trait EdgeProvider<I> {
+    /// Edge type.
+    type Edge;
+
     /// A particular implementation of a topology trait for edges.
-    type Edges<'a>: Topology<Item = (I, I)>;
+    type Edges<'a>: Topology<Item = Self::Edge>;
 
     /// `size` retruns the number of edges in a graph.
     fn size(&self) -> usize;

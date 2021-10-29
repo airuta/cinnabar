@@ -11,7 +11,8 @@ pub fn dfs<T: Topology>(topology: &T, start: T::Item) -> impl Iterator<Item = T:
 where
     T::Item: Index,
 {
-    let mut discovered: HashSet<T::Item> = HashSet::new();
+    let build_hasher = T::BuildHasher::default();
+    let mut discovered = HashSet::with_hasher(build_hasher);
     let mut stack = vec![start];
 
     discovered.insert(start);

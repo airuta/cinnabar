@@ -12,6 +12,10 @@ pub trait Topology {
     /// The type of items in a graph - typically vertices or edges.
     type Item;
 
+    /// The type of the build hasher used to construcr hashers for items. Some items,
+    /// like bidirectional edges, require special treatment.
+    type BuildHasher: std::hash::BuildHasher + Default;
+
     /// The type of iterator used to traverse all graph items.
     type ItemIter<'a>: Iterator<Item = Self::Item>;
 
