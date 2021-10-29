@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use cinnabar::graphs::Grid;
 use cinnabar::prelude::*;
+use cinnabar::traversal::*;
 
 const ROWS: usize = 3;
 const COLS: usize = 4;
@@ -33,6 +34,7 @@ fn grid_traverse_should_visit_all_vertices() {
             assert!(ids.contains(&id));
         }
     }
+    assert_eq!(ids.len(), ROWS * COLS);
 }
 
 #[test]
@@ -43,4 +45,19 @@ fn grid_construction_can_be_inspected() {
     });
     let traversal_ids = grid.traverse_by_rows().collect::<HashSet<_>>();
     assert_eq!(inspector_ids, traversal_ids);
+}
+
+#[test]
+fn grid_vertices_can_be_dfs_traversed() {
+    let grid = create_grid();
+    let start = grid.at(0, 0).unwrap();
+    #[allow(clippy::needless_collect)]
+    let ids = dfs(&grid.vertices(), start).collect::<Vec<_>>();
+    for i in 0..ROWS {
+        for j in 0..COLS {
+            let id = grid.at(i, j).unwrap();
+            assert!(ids.contains(&id));
+        }
+    }
+    assert_eq!(ids.len(), ROWS * COLS);
 }
