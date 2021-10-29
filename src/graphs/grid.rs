@@ -147,7 +147,7 @@ impl<'a, I: Index> Topology for Vertices<'a, I> {
         self.grid.coords.keys().copied()
     }
 
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
         let Coords(row, column) = self.grid.coords_of(item)?;
         let iter = self
             .grid
@@ -191,7 +191,7 @@ impl<'a, I: Index> Topology for Edges<'a, I> {
         by_rows.chain(by_columns)
     }
 
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
         let (a, b) = item;
         let a_neighbors = adjacent_vertices(self.grid, a, b)?;
         let b_neighbors = adjacent_vertices(self.grid, b, a)?;

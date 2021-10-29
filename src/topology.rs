@@ -22,7 +22,7 @@ pub trait Topology {
     fn iter(&self) -> Self::ItemIter<'_>;
 
     /// Iterate through all the items adjacent to the given `item`.
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>>;
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>>;
 
     /// Checks if the given `item` exists in the graph.
     fn contains(&self, item: Self::Item) -> bool;
