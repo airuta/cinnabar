@@ -50,5 +50,5 @@ pub mod prelude {
     use super::*;
     pub use index::*;
     pub use providers::*;
-    pub use traversal::Traversal;
+    pub use topology::Topology;
 }

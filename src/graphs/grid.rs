@@ -3,7 +3,6 @@
 use crate::index::*;
 use crate::providers::*;
 use crate::topology::*;
-use crate::traversal::*;
 use crate::utils::{Bifunctor, Collapse};
 
 use itertools::Itertools;
@@ -230,7 +229,7 @@ impl<I: Index> Grid<I> {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
         let last_col = self.columns - 1;
-        traverse(start, move |id| match self.coords_of(id).unwrap() {
+        std::iter::successors(Some(start), move |id| match self.coords_of(*id).unwrap() {
             Coords(row, col) if row == last_row && col == last_col => None,
             Coords(row, col) if col == last_col => self.at(row + 1, 0),
             Coords(row, col) => self.at(row, col + 1),
