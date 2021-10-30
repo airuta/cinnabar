@@ -1,5 +1,9 @@
 //! This module is home of various usefuls utils for graph manipulation.
 
+mod unordered_pair;
+
+pub use unordered_pair::*;
+
 /// Reverse trait provides a way to reverse some bidirectioanl objects such as graph edges.
 pub trait Reverse {
     /// The type of the reversal output.
