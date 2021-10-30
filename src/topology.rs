@@ -12,6 +12,10 @@ pub trait Topology {
     /// The type of items in a graph - typically vertices or edges.
     type Item;
 
+    /// The type of the build hasher used to construcr hashers for items. Some items,
+    /// like bidirectional edges, require special treatment.
+    type BuildHasher: std::hash::BuildHasher + Default;
+
     /// The type of iterator used to traverse all graph items.
     type ItemIter<'a>: Iterator<Item = Self::Item>;
 
@@ -22,7 +26,7 @@ pub trait Topology {
     fn iter(&self) -> Self::ItemIter<'_>;
 
     /// Iterate through all the items adjacent to the given `item`.
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>>;
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>>;
 
     /// Checks if the given `item` exists in the graph.
     fn contains(&self, item: Self::Item) -> bool;
