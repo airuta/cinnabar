@@ -1,12 +1,12 @@
-//! This module is a home for graph traversals. It defines a traversal trait which provies
-//! most common traversals, and a helper function for writing custom traversals for your own
-//! graphs.
+//! This module is a home for graph traversals. It defines two fundamental traversal algorithms,
+//! DFS and BFS, that rely on provided topolgy to traverse the items.
 
 use std::collections::{HashSet, VecDeque};
 
 use crate::index::Index;
 use crate::topology::Topology;
 
+/// Given a `topology`, start at the `start` item and traverse everything from that point in DFS order.
 pub fn dfs<T: Topology>(topology: &T, start: T::Item) -> impl Iterator<Item = T::Item> + '_
 where
     T::Item: Index,
@@ -30,6 +30,7 @@ where
     })
 }
 
+/// Given a `topology`, start at the `start` item and traverse everything from that point in BFS order.
 pub fn bfs<T: Topology>(topology: &T, start: T::Item) -> impl Iterator<Item = T::Item> + '_
 where
     T::Item: Index,
