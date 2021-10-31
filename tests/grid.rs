@@ -64,11 +64,35 @@ fn grid_vertices_can_be_dfs_traversed() {
 }
 
 #[test]
+fn grid_vertices_can_be_bfs_traversed() {
+    let grid = create_grid();
+    let start = grid.at(0, 0).unwrap();
+    let ids = bfs(&grid.vertices(), start).collect::<Vec<_>>();
+    for i in 0..ROWS {
+        for j in 0..COLS {
+            let id = grid.at(i, j).unwrap();
+            assert!(ids.contains(&id));
+        }
+    }
+    assert_eq!(ids.len(), ROWS * COLS);
+}
+
+#[test]
 fn grid_edges_can_be_dfs_traversed() {
     let grid = create_grid();
     let a = grid.at(0, 0).unwrap();
     let b = grid.at(0, 1).unwrap();
     let dfs_edges = dfs(&grid.edges(), Edge::new(a, b)).collect::<EdgeSet<_>>();
+    let all_edges = grid.edges().iter().collect::<EdgeSet<_>>();
+    assert_eq!(dfs_edges, all_edges);
+}
+
+#[test]
+fn grid_edges_can_be_bfs_traversed() {
+    let grid = create_grid();
+    let a = grid.at(0, 0).unwrap();
+    let b = grid.at(0, 1).unwrap();
+    let dfs_edges = bfs(&grid.edges(), Edge::new(a, b)).collect::<EdgeSet<_>>();
     let all_edges = grid.edges().iter().collect::<EdgeSet<_>>();
     assert_eq!(dfs_edges, all_edges);
 }
