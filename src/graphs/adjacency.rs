@@ -3,7 +3,11 @@
 use crate::construct::Construct;
 use crate::index::Index;
 use crate::marker::*;
+use crate::providers::*;
+use crate::topology::Topology;
+use crate::utils::UnorderedPair;
 
+use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
@@ -22,7 +26,7 @@ impl<I, D> AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index> Construct<I> for AdjacencyGraph<I, Unidirection> {
+impl<I: Index> Construct<I> for AdjacencyGraph<I, Unidirectional> {
     fn add(&mut self, id: I) -> bool {
         if self.storage.contains_key(&id) {
             return false;
@@ -46,13 +50,121 @@ impl<I: Index> Construct<I> for AdjacencyGraph<I, Unidirection> {
     }
 }
 
+// Vertex and edge providers
+
+pub fn uedge<I>(a: I, b: I) -> UnorderedPair<I> {
+    UnorderedPair(a, b)
+}
+
+impl<I: Index, D> VertexProvider<I> for AdjacencyGraph<I, D> {
+    type Vertices<'a> = impl Topology<Item = I>;
+
+    fn order(&self) -> usize {
+        self.storage.len()
+    }
+
+    fn vertices(&self) -> Self::Vertices<'_> {
+        Vertices { graph: self }
+    }
+}
+
+impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Unidirectional> {
+    type Edge = (I, I);
+    type Edges<'a> = impl Topology<Item = Self::Edge>;
+
+    fn size(&self) -> usize {
+        self.storage.values().map(|edges| edges.len()).sum()
+    }
+
+    fn edges(&self) -> Self::Edges<'_> {
+        Edges { graph: self }
+    }
+}
+
+// Vertex topology
+
+struct Vertices<'a, I, D> {
+    graph: &'a AdjacencyGraph<I, D>,
+}
+
+impl<'a, I: Index, D> Topology for Vertices<'a, I, D> {
+    type Item = I;
+    type BuildHasher = RandomState;
+    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+
+    fn iter(&self) -> Self::ItemIter<'_> {
+        self.graph.storage.keys().copied()
+    }
+
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+        self.graph
+            .storage
+            .get(&item)
+            .map(|edges| edges.iter().copied())
+    }
+
+    fn contains(&self, item: Self::Item) -> bool {
+        self.graph.storage.contains_key(&item)
+    }
+}
+
+// Edge topology
+
+struct Edges<'a, I, D> {
+    graph: &'a AdjacencyGraph<I, D>,
+}
+
+impl<'a, I: Index> Topology for Edges<'a, I, Unidirectional> {
+    type Item = (I, I);
+    type BuildHasher = RandomState;
+    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+
+    fn iter(&self) -> Self::ItemIter<'_> {
+        self.graph
+            .storage
+            .iter()
+            .map(|(start, edges)| edges.iter().map(|end| (*start, *end)))
+            .flatten()
+    }
+
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+        let (start, end) = item;
+        outbound_edges(self.graph, end, start)
+    }
+
+    fn contains(&self, item: Self::Item) -> bool {
+        let (start, end) = item;
+        self.graph
+            .storage
+            .get(&start)
+            .map(|edges| edges.contains(&end))
+            == Some(true)
+    }
+}
+
+fn outbound_edges<I: Index, D>(
+    graph: &AdjacencyGraph<I, D>,
+    source: I,
+    exclude: I,
+) -> Option<impl Iterator<Item = (I, I)> + '_> {
+    graph.storage.get(&source).map(move |edges| {
+        edges
+            .iter()
+            .filter(move |target| **target != exclude)
+            .map(move |target| (source, *target))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    type Unigraph = AdjacencyGraph<usize, Unidirectional>;
 
     #[test]
     fn can_add_vertices() {
-        let mut graph = AdjacencyGraph::<usize, Unidirection>::new();
+        let mut graph = Unigraph::new();
         graph.add(1);
         graph.add(2);
         assert!(graph.storage.contains_key(&1));
@@ -61,7 +173,7 @@ mod tests {
 
     #[test]
     fn can_remove_vertices() {
-        let mut graph = AdjacencyGraph::<usize, Unidirection>::new();
+        let mut graph = Unigraph::new();
         graph.add(1);
         graph.add(2);
         graph.remove(2);
@@ -71,7 +183,7 @@ mod tests {
 
     #[test]
     fn can_create_unidirectional_edges() {
-        let mut graph = AdjacencyGraph::<usize, Unidirection>::new();
+        let mut graph = Unigraph::new();
         graph.add(1);
         graph.add(2);
         graph.link(1, 2);
@@ -81,7 +193,7 @@ mod tests {
 
     #[test]
     fn can_remove_unidirectional_edges() {
-        let mut graph = AdjacencyGraph::<usize, Unidirection>::new();
+        let mut graph = Unigraph::new();
         graph.add(1);
         graph.add(2);
         graph.link(1, 2);
