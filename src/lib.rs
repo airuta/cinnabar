@@ -39,6 +39,7 @@
 pub mod construct;
 pub mod graphs;
 pub mod index;
+pub mod marker;
 pub mod providers;
 pub mod topology;
 pub mod traversal;
@@ -51,6 +52,7 @@ pub mod prelude {
     use super::*;
     pub use construct::*;
     pub use index::*;
+    pub use marker::*;
     pub use providers::*;
     pub use topology::Topology;
 }
