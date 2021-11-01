@@ -36,6 +36,7 @@
 #![feature(generic_associated_types)]
 #![feature(mixed_integer_ops)]
 
+pub mod construct;
 pub mod graphs;
 pub mod index;
 pub mod providers;
@@ -48,6 +49,7 @@ pub mod utils;
 /// in the [`utils`] module are not provided and require a separate use statement as well.
 pub mod prelude {
     use super::*;
+    pub use construct::*;
     pub use index::*;
     pub use providers::*;
     pub use topology::Topology;
