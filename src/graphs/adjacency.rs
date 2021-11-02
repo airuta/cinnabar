@@ -5,6 +5,7 @@ use crate::index::Index;
 use crate::marker::*;
 use crate::providers::*;
 use crate::topology::Topology;
+use crate::utils::UnorderedBuildHasher;
 use crate::utils::UnorderedPair;
 
 use std::collections::hash_map::RandomState;
@@ -23,6 +24,12 @@ impl<I, D> AdjacencyGraph<I, D> {
             phantom: PhantomData,
             storage: HashMap::new(),
         }
+    }
+}
+
+impl<I: Index, D> AdjacencyGraph<I, D> {
+    fn has_edge(&self, start: I, end: I) -> bool {
+        self.storage.get(&start).map(|edges| edges.contains(&end)) == Some(true)
     }
 }
 
@@ -136,11 +143,34 @@ impl<'a, I: Index> Topology for Edges<'a, I, Unidirectional> {
 
     fn contains(&self, item: Self::Item) -> bool {
         let (start, end) = item;
+        self.graph.has_edge(start, end)
+    }
+}
+
+impl<'a, I: Index> Topology for Edges<'a, I, Bidirectional> {
+    type Item = UnorderedPair<I>;
+    type BuildHasher = UnorderedBuildHasher;
+    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+
+    fn iter(&self) -> Self::ItemIter<'_> {
         self.graph
             .storage
-            .get(&start)
-            .map(|edges| edges.contains(&end))
-            == Some(true)
+            .iter()
+            .map(|(start, edges)| edges.iter().map(|end| uedge(*start, *end)))
+            .flatten()
+    }
+
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+        let UnorderedPair(a, b) = item;
+        let a_edges = outbound_edges(self.graph, a, b)?;
+        let b_edges = outbound_edges(self.graph, b, a)?;
+        Some(a_edges.chain(b_edges).map(|(a, b)| uedge(a, b)))
+    }
+
+    fn contains(&self, item: Self::Item) -> bool {
+        let UnorderedPair(a, b) = item;
+        self.graph.has_edge(a, b) || self.graph.has_edge(b, a)
     }
 }
 
