@@ -28,8 +28,20 @@ impl<I, D> AdjacencyGraph<I, D> {
 }
 
 impl<I: Index, D> AdjacencyGraph<I, D> {
-    fn has_edge(&self, start: I, end: I) -> bool {
-        self.storage.get(&start).map(|edges| edges.contains(&end)) == Some(true)
+    fn add_edge(&mut self, a: I, b: I) -> bool {
+        let has_a = self.storage.contains_key(&a);
+        let has_b = self.storage.contains_key(&b);
+        has_a && has_b && self.storage.get_mut(&a).map(|links| links.insert(b)) == Some(true)
+    }
+
+    fn remove_edge(&mut self, a: I, b: I) -> bool {
+        let has_a = self.storage.contains_key(&a);
+        let has_b = self.storage.contains_key(&b);
+        has_a && has_b && self.storage.get_mut(&a).map(|links| links.remove(&b)) == Some(true)
+    }
+
+    fn has_edge(&self, a: I, b: I) -> bool {
+        self.storage.get(&a).map(|edges| edges.contains(&b)) == Some(true)
     }
 }
 
@@ -47,13 +59,33 @@ impl<I: Index> Construct<I> for AdjacencyGraph<I, Directed> {
     }
 
     fn link(&mut self, a: I, b: I) -> bool {
-        self.storage.contains_key(&b)
-            && self.storage.get_mut(&a).map(|links| links.insert(b)) == Some(true)
+        self.add_edge(a, b)
     }
 
     fn unlink(&mut self, a: I, b: I) -> bool {
-        self.storage.contains_key(&b)
-            && self.storage.get_mut(&a).map(|links| links.remove(&b)) == Some(true)
+        self.remove_edge(a, b)
+    }
+}
+
+impl<I: Index> Construct<I> for AdjacencyGraph<I, Undirected> {
+    fn add(&mut self, id: I) -> bool {
+        if self.storage.contains_key(&id) {
+            return false;
+        }
+        self.storage.insert(id, HashSet::new());
+        true
+    }
+
+    fn remove(&mut self, id: I) -> bool {
+        self.storage.remove(&id).is_some()
+    }
+
+    fn link(&mut self, a: I, b: I) -> bool {
+        self.add_edge(a, b) && self.add_edge(b, a)
+    }
+
+    fn unlink(&mut self, a: I, b: I) -> bool {
+        self.remove_edge(a, b) && self.remove_edge(b, a)
     }
 }
 
@@ -81,6 +113,23 @@ impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Directed> {
 
     fn size(&self) -> usize {
         self.storage.values().map(|edges| edges.len()).sum()
+    }
+
+    fn edges(&self) -> Self::Edges<'_> {
+        Edges { graph: self }
+    }
+}
+
+impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Undirected> {
+    type Edge = UnorderedPair<I>;
+    type Edges<'a> = impl Topology<Item = Self::Edge>;
+
+    fn size(&self) -> usize {
+        self.storage
+            .values()
+            .map(|edges| edges.len())
+            .sum::<usize>()
+            / 2
     }
 
     fn edges(&self) -> Self::Edges<'_> {
