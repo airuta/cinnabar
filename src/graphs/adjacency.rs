@@ -91,10 +91,6 @@ impl<I: Index> Construct<I> for AdjacencyGraph<I, Undirected> {
 
 // Vertex and edge providers
 
-pub fn uedge<I>(a: I, b: I) -> UnorderedPair<I> {
-    UnorderedPair(a, b)
-}
-
 impl<I: Index, D> VertexProvider<I> for AdjacencyGraph<I, D> {
     type Vertices<'a> = impl Topology<Item = I>;
 
@@ -206,7 +202,7 @@ impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
         self.graph
             .storage
             .iter()
-            .map(|(start, edges)| edges.iter().map(|end| uedge(*start, *end)))
+            .map(|(start, edges)| edges.iter().map(|end| (*start, *end).into()))
             .flatten()
     }
 
@@ -214,7 +210,7 @@ impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
         let UnorderedPair(a, b) = item;
         let a_edges = outbound_edges(self.graph, a, b)?;
         let b_edges = outbound_edges(self.graph, b, a)?;
-        Some(a_edges.chain(b_edges).map(|(a, b)| uedge(a, b)))
+        Some(a_edges.chain(b_edges).map(|(a, b)| (a, b).into()))
     }
 
     fn contains(&self, item: Self::Item) -> bool {
