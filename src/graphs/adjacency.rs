@@ -33,7 +33,7 @@ impl<I: Index, D> AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index> Construct<I> for AdjacencyGraph<I, Unidirectional> {
+impl<I: Index> Construct<I> for AdjacencyGraph<I, Directed> {
     fn add(&mut self, id: I) -> bool {
         if self.storage.contains_key(&id) {
             return false;
@@ -75,7 +75,7 @@ impl<I: Index, D> VertexProvider<I> for AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Unidirectional> {
+impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Directed> {
     type Edge = (I, I);
     type Edges<'a> = impl Topology<Item = Self::Edge>;
 
@@ -122,7 +122,7 @@ struct Edges<'a, I, D> {
     graph: &'a AdjacencyGraph<I, D>,
 }
 
-impl<'a, I: Index> Topology for Edges<'a, I, Unidirectional> {
+impl<'a, I: Index> Topology for Edges<'a, I, Directed> {
     type Item = (I, I);
     type BuildHasher = RandomState;
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
@@ -147,7 +147,7 @@ impl<'a, I: Index> Topology for Edges<'a, I, Unidirectional> {
     }
 }
 
-impl<'a, I: Index> Topology for Edges<'a, I, Bidirectional> {
+impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
     type Item = UnorderedPair<I>;
     type BuildHasher = UnorderedBuildHasher;
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
@@ -190,11 +190,11 @@ fn outbound_edges<I: Index, D>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    type Unigraph = AdjacencyGraph<usize, Unidirectional>;
+    type DGraph = AdjacencyGraph<usize, Directed>;
 
     #[test]
     fn can_add_vertices() {
-        let mut graph = Unigraph::new();
+        let mut graph = DGraph::new();
         graph.add(1);
         graph.add(2);
         assert!(graph.storage.contains_key(&1));
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn can_remove_vertices() {
-        let mut graph = Unigraph::new();
+        let mut graph = DGraph::new();
         graph.add(1);
         graph.add(2);
         graph.remove(2);
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn can_create_unidirectional_edges() {
-        let mut graph = Unigraph::new();
+        let mut graph = DGraph::new();
         graph.add(1);
         graph.add(2);
         graph.link(1, 2);
@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn can_remove_unidirectional_edges() {
-        let mut graph = Unigraph::new();
+        let mut graph = DGraph::new();
         graph.add(1);
         graph.add(2);
         graph.link(1, 2);
