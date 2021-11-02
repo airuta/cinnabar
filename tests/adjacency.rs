@@ -38,8 +38,8 @@ fn adjacency_vertices_can_be_dfs_traversed() {
 #[test]
 fn adjacency_vertices_can_be_bfs_traversed() {
     let graph = create_directed_graph();
-    let ids = dfs(&graph.vertices(), 1).collect::<Vec<_>>();
-    assert_eq!(ids, vec![1, 2, 3, 4]);
+    let ids = bfs(&graph.vertices(), 1).collect::<Vec<_>>();
+    assert!(ids == vec![1, 2, 3, 4] || ids == vec![1, 3, 2, 4]);
 }
 
 #[test]
