@@ -12,6 +12,9 @@ use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
+/// `AdjacencyGraph` is a graph based on the adjacency list representation. The graph implements both topology and
+/// construct traits and allows one to create arbitrary graphs. The `D` parameter in the template should be
+/// [`Directional`] or [`Unidirectional`] to pick between two major types of graphs.
 #[derive(Default)]
 pub struct AdjacencyGraph<I, D> {
     phantom: PhantomData<D>,
