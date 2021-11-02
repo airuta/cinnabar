@@ -41,22 +41,18 @@ detailed information.
 
 ### Pre-made grahs
 - [x] Grid
-- [ ] Generic unividrectional graph
-- [ ] Generic bidirectional graph
+- [x] Adjacency list-based graph
+- [ ] Incidence matrix-based graph
   
 ### Traversals
-- [ ] DFS
-- [ ] BFS
+- [x] DFS
+- [x] BFS
 
 ### Search
 - [ ] DFS-based
 - [ ] BFS-based
 - [ ] Dijkstra
 - [ ] A-star
-
-## Roadmap
-
-Please see the [Roadmap](https://github.com/airuta/cinnabar/wiki/Roadmap) page.
 
 ## Supported Rust versions
 
