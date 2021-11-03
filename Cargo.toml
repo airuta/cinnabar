@@ -2,7 +2,7 @@
 name = "cinnabar"
 version = "0.2.0"
 edition = "2021"
-license-file = "LICENSE"
+license = "MIT"
 repository = "https://github.com/airuta/cinnabar"
 description = "Rust library of graph algorithms and data strctures"
 readme = "README.md"
