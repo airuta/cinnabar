@@ -3,15 +3,29 @@
 use crate::index::*;
 use crate::providers::*;
 use crate::topology::*;
-use crate::traversal::*;
+use crate::utils::{Bifunctor, Collapse};
+use crate::utils::{UnorderedBuildHasher, UnorderedPair};
 
 use itertools::Itertools;
-use std::collections::HashMap;
-use std::ops::Neg;
+use std::collections::hash_map::RandomState;
+use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
-/// Coordinates of a not in a grid in row-column order.
+/// Coordinates of a vertex in a grid in row-column order.
 #[derive(Copy, Clone, Debug)]
 pub struct Coords(pub usize, pub usize);
+
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
+pub struct Edge<I>(UnorderedPair<I>);
+
+impl<I> Edge<I> {
+    pub fn new(a: I, b: I) -> Self {
+        Self(UnorderedPair(a, b))
+    }
+}
+
+/// Use `EdgeSet` whenever you need to store a hash set of `Grid`'s edges.
+pub type EdgeSet<I> = HashSet<Edge<I>, UnorderedBuildHasher>;
 
 /// A 2D grid graph, arranging it's nodes in a rectangular grid. It does not provide any
 /// vertex or edge-related storage for weights. Every vertex is connected to all its
@@ -79,21 +93,18 @@ impl<I: Index> Grid<I> {
     /// Return the coordinates of all neighbors to a vertex at the given coordinates.
     /// This method is primarily used internal buy can be used to simplify handling
     /// of edge and corner vertices.
-    pub fn neighbors_of(&self, row: usize, column: usize) -> impl Iterator<Item = Coords> + '_ {
+    pub fn neighbors_of(&self, row: usize, col: usize) -> impl Iterator<Item = Coords> + '_ {
         [(1, 0), (-1, 0), (0, 1), (0, -1)]
             .into_iter()
-            .filter(move |(dx, _)| inside(column, *dx, self.columns))
-            .filter(move |(_, dy)| inside(row, *dy, self.rows))
-            .map(move |(dx, dy)| Coords(dy as usize + row, dx as usize + column))
+            .filter_map(move |pair| {
+                pair.bimap(
+                    |dy| row.checked_add_signed(dy),
+                    |dx| col.checked_add_signed(dx),
+                )
+                .collapse(Coords)
+            })
+            .filter(|coords| coords.0 < self.rows && coords.1 < self.columns)
     }
-}
-
-fn inside(value: usize, offset: i32, high: usize) -> bool {
-    let range = match offset {
-        _ if offset >= 0 => 0..high - offset as usize,
-        _ => offset.neg() as usize..high + offset.neg() as usize,
-    };
-    range.contains(&value)
 }
 
 fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
@@ -121,7 +132,8 @@ impl<I: Index> VertexProvider<I> for Grid<I> {
 }
 
 impl<I: Index> EdgeProvider<I> for Grid<I> {
-    type Edges<'a> = impl Topology<Item = (I, I)>;
+    type Edge = Edge<I>;
+    type Edges<'a> = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.rows * (self.columns - 1) + self.columns * (self.rows - 1)
@@ -140,6 +152,7 @@ struct Vertices<'a, I> {
 
 impl<'a, I: Index> Topology for Vertices<'a, I> {
     type Item = I;
+    type BuildHasher = RandomState;
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
     type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
 
@@ -147,7 +160,7 @@ impl<'a, I: Index> Topology for Vertices<'a, I> {
         self.grid.coords.keys().copied()
     }
 
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
         let Coords(row, column) = self.grid.coords_of(item)?;
         let iter = self
             .grid
@@ -168,7 +181,8 @@ struct Edges<'a, I> {
 }
 
 impl<'a, I: Index> Topology for Edges<'a, I> {
-    type Item = (I, I);
+    type Item = Edge<I>;
+    type BuildHasher = UnorderedBuildHasher;
     type ItemIter<'b> = impl Iterator<Item = Self::Item>;
     type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
 
@@ -178,51 +192,48 @@ impl<'a, I: Index> Topology for Edges<'a, I> {
             (0..self.grid.columns).tuple_windows().map(move |(a, b)| {
                 let a = grid[row][a];
                 let b = grid[row][b];
-                (a, b)
+                Edge::new(a, b)
             })
         });
         let by_columns = (0..self.grid.columns).flat_map(move |column| {
             (0..self.grid.rows).tuple_windows().map(move |(a, b)| {
                 let a = grid[a][column];
                 let b = grid[b][column];
-                (a, b)
+                Edge::new(a, b)
             })
         });
         by_rows.chain(by_columns)
     }
 
-    fn adjacent(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
-        let (a, b) = item;
-        let a_neighbors = adjacent_vertices(self.grid, a, b)?;
-        let b_neighbors = adjacent_vertices(self.grid, b, a)?;
+    fn adjacent_to(&self, item: Self::Item) -> Option<Self::AdjacentIter<'_>> {
+        let Edge(UnorderedPair(a, b)) = item;
+        let a_neighbors = outbound_edges(self.grid, a, b)?;
+        let b_neighbors = outbound_edges(self.grid, b, a)?;
         Some(a_neighbors.chain(b_neighbors))
     }
 
     fn contains(&self, item: Self::Item) -> bool {
-        edge_coords(self.grid, item.0, item.1)
-            .map(|(a, b)| adjacent(a.1, a.0, b.1, b.0))
+        let item = item.0;
+        let a = self.grid.coords_of(item.0);
+        let b = self.grid.coords_of(item.1);
+        (a, b)
+            .collapse(|a, b| adjacent(a.1, a.0, b.1, b.0))
             .unwrap_or_default()
     }
 }
 
-fn adjacent_vertices<I: Index>(
+fn outbound_edges<I: Index>(
     grid: &Grid<I>,
     source: I,
     exclude: I,
-) -> Option<impl Iterator<Item = (I, I)> + '_> {
+) -> Option<impl Iterator<Item = Edge<I>> + '_> {
     let Coords(row, column) = grid.coords_of(source)?;
     let vertices = grid
         .neighbors_of(row, column)
         .map(|Coords(row, column)| grid.at(row, column).unwrap())
         .filter(move |target| *target != exclude)
-        .map(move |target| (source, target));
+        .map(move |target| Edge::new(source, target));
     Some(vertices)
-}
-
-fn edge_coords<I: Index>(grid: &Grid<I>, a: I, b: I) -> Option<(Coords, Coords)> {
-    let a = grid.coords_of(a)?;
-    let b = grid.coords_of(b)?;
-    Some((a, b))
 }
 
 /// Additional grid-specific traversals.
@@ -233,7 +244,7 @@ impl<I: Index> Grid<I> {
         let start = self.at(0, 0).unwrap();
         let last_row = self.rows - 1;
         let last_col = self.columns - 1;
-        traverse(start, move |id| match self.coords_of(id).unwrap() {
+        std::iter::successors(Some(start), move |id| match self.coords_of(*id).unwrap() {
             Coords(row, col) if row == last_row && col == last_col => None,
             Coords(row, col) if col == last_col => self.at(row + 1, 0),
             Coords(row, col) => self.at(row, col + 1),
@@ -244,18 +255,7 @@ impl<I: Index> Grid<I> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn inside_test() {
-        assert!(inside(1, -1, 5));
-        assert!(inside(5, -1, 5));
-        assert!(inside(0, 1, 5));
-        assert!(inside(3, 1, 5));
-        assert!(!inside(4, 1, 5));
-        assert!(!inside(0, -1, 5));
-        assert!(!inside(5, 1, 5));
-        assert!(!inside(6, 1, 5));
-    }
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn adjacent_test() {
@@ -269,5 +269,13 @@ mod tests {
         assert!(!adjacent(5, 3, 5, 6));
         assert!(!adjacent(5, 6, 5, 3));
         assert!(!adjacent(5, 3, 6, 4));
+    }
+
+    #[test]
+    fn edges_are_bidirectional() {
+        let e1 = Edge::new(1, 2);
+        let e2 = Edge::new(2, 1);
+        assert_eq!(e1, e2);
+        assert_eq!(e2, e1);
     }
 }

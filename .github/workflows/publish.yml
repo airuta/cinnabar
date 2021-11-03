@@ -23,3 +23,7 @@ jobs:
       with:
         command: publish
         args: --token ${{ env.CARGO_TOKEN }}
+    - name: Get version from Cargo.toml and tag the branch with it
+      run: |
+        PKG_VERSION = $(shell awk -F ' = ' '$$1 ~ /version/ { gsub(/[\"]/, "", $$2); printf("v%s",$$2) }' Cargo.toml)
+        git tag -a $PKG_VERSION

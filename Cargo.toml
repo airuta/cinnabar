@@ -1,6 +1,6 @@
 [package]
 name = "cinnabar"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license-file = "LICENSE"
 repository = "https://github.com/airuta/cinnabar"
@@ -10,3 +10,6 @@ keywords = ["graph", "data-structures", "algorithms"]
 
 [dependencies]
 itertools = "0.10.1"
+
+[dev-dependencies]
+pretty_assertions = "1.0.0"
