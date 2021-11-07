@@ -2,8 +2,8 @@
 //! enough to be used as is, avoiding the need to roll out your own graph, and some are
 //! only useful in a very particular cases.
 
-pub mod adjacency;
-pub use adjacency::AdjacencyList;
+pub mod adjacency_list;
+pub use adjacency_list::AdjacencyList;
 
 pub mod grid;
 pub use grid::Grid;
