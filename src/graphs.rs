@@ -3,7 +3,7 @@
 //! only useful in a very particular cases.
 
 pub mod adjacency;
-pub use adjacency::AdjacencyGraph;
+pub use adjacency::AdjacencyList;
 
 pub mod grid;
 pub use grid::Grid;
