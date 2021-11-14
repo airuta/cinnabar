@@ -95,7 +95,11 @@ impl<I: Index> Construct<I> for AdjacencyList<I, Undirected> {
 // Vertex and edge providers
 
 impl<I: Index, D> VertexProvider<I> for AdjacencyList<I, D> {
-    type Vertices<'a> = impl Topology<Item = I>;
+    type Vertices<'a>
+    where
+        D: 'a,
+        I: 'a,
+    = impl Topology<Item = I>;
 
     fn order(&self) -> usize {
         self.storage.len()
@@ -108,7 +112,10 @@ impl<I: Index, D> VertexProvider<I> for AdjacencyList<I, D> {
 
 impl<I: Index> EdgeProvider<I> for AdjacencyList<I, Directed> {
     type Edge = (I, I);
-    type Edges<'a> = impl Topology<Item = Self::Edge>;
+    type Edges<'a>
+    where
+        I: 'a,
+    = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.storage.values().map(|edges| edges.len()).sum()
@@ -121,7 +128,10 @@ impl<I: Index> EdgeProvider<I> for AdjacencyList<I, Directed> {
 
 impl<I: Index> EdgeProvider<I> for AdjacencyList<I, Undirected> {
     type Edge = UnorderedPair<I>;
-    type Edges<'a> = impl Topology<Item = Self::Edge>;
+    type Edges<'a>
+    where
+        I: 'a,
+    = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.storage
@@ -145,8 +155,14 @@ struct Vertices<'a, I, D> {
 impl<'a, I: Index, D> Topology for Vertices<'a, I, D> {
     type Item = I;
     type BuildHasher = RandomState;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph.storage.keys().copied()
@@ -173,8 +189,14 @@ struct Edges<'a, I, D> {
 impl<'a, I: Index> Topology for Edges<'a, I, Directed> {
     type Item = (I, I);
     type BuildHasher = RandomState;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph
@@ -198,8 +220,14 @@ impl<'a, I: Index> Topology for Edges<'a, I, Directed> {
 impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
     type Item = UnorderedPair<I>;
     type BuildHasher = UnorderedBuildHasher;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph

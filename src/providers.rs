@@ -8,7 +8,9 @@ use crate::topology::Topology;
 /// a vertex topology.
 pub trait VertexProvider<I> {
     /// A particular implementation of a topology trait for vertices.
-    type Vertices<'a>: Topology<Item = I>;
+    type Vertices<'a>: Topology<Item = I>
+    where
+        Self: 'a;
 
     /// `order` retruns the number of vertices in a graph.
     fn order(&self) -> usize;
@@ -24,7 +26,9 @@ pub trait EdgeProvider<I> {
     type Edge;
 
     /// A particular implementation of a topology trait for edges.
-    type Edges<'a>: Topology<Item = Self::Edge>;
+    type Edges<'a>: Topology<Item = Self::Edge>
+    where
+        Self: 'a;
 
     /// `size` retruns the number of edges in a graph.
     fn size(&self) -> usize;

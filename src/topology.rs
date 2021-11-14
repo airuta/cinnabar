@@ -17,10 +17,14 @@ pub trait Topology {
     type BuildHasher: std::hash::BuildHasher + Default;
 
     /// The type of iterator used to traverse all graph items.
-    type ItemIter<'a>: Iterator<Item = Self::Item>;
+    type ItemIter<'a>: Iterator<Item = Self::Item>
+    where
+        Self: 'a;
 
     /// The type of iterator used to traverse adjacent items.
-    type AdjacentIter<'a>: Iterator<Item = Self::Item>;
+    type AdjacentIter<'a>: Iterator<Item = Self::Item>
+    where
+        Self: 'a;
 
     /// Iterate through all the items in a graph.
     fn iter(&self) -> Self::ItemIter<'_>;
