@@ -1,12 +1,12 @@
 use cinnabar::utils::UnorderedPair;
 use pretty_assertions::assert_eq;
 
-use cinnabar::graphs::AdjacencyGraph;
+use cinnabar::graphs::AdjacencyList;
 use cinnabar::prelude::*;
 use cinnabar::traversal::*;
 
-fn create_directed_graph() -> AdjacencyGraph<usize, Directed> {
-    let mut graph = AdjacencyGraph::new();
+fn create_directed_graph() -> AdjacencyList<usize, Directed> {
+    let mut graph = AdjacencyList::new();
     graph.add(1);
     graph.add(2);
     graph.add(3);
@@ -17,8 +17,8 @@ fn create_directed_graph() -> AdjacencyGraph<usize, Directed> {
     graph
 }
 
-fn create_undirected_graph() -> AdjacencyGraph<usize, Undirected> {
-    let mut graph = AdjacencyGraph::new();
+fn create_undirected_graph() -> AdjacencyList<usize, Undirected> {
+    let mut graph = AdjacencyList::new();
     graph.add(1);
     graph.add(2);
     graph.add(3);

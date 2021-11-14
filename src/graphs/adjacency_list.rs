@@ -12,16 +12,16 @@ use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
-/// `AdjacencyGraph` is a graph based on the adjacency list representation. The graph implements both topology and
+/// `AdjacencyList` is a graph based on the adjacency list representation. The graph implements both topology and
 /// construct traits and allows one to create arbitrary graphs. The `D` parameter in the template should be
 /// [`Directional`] or [`Unidirectional`] to pick between two major types of graphs.
 #[derive(Default)]
-pub struct AdjacencyGraph<I, D> {
+pub struct AdjacencyList<I, D> {
     phantom: PhantomData<D>,
     storage: HashMap<I, HashSet<I>>,
 }
 
-impl<I, D> AdjacencyGraph<I, D> {
+impl<I, D> AdjacencyList<I, D> {
     pub fn new() -> Self {
         Self {
             phantom: PhantomData,
@@ -30,7 +30,7 @@ impl<I, D> AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index, D> AdjacencyGraph<I, D> {
+impl<I: Index, D> AdjacencyList<I, D> {
     fn add_edge(&mut self, a: I, b: I) -> bool {
         let has_a = self.storage.contains_key(&a);
         let has_b = self.storage.contains_key(&b);
@@ -48,7 +48,7 @@ impl<I: Index, D> AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index> Construct<I> for AdjacencyGraph<I, Directed> {
+impl<I: Index> Construct<I> for AdjacencyList<I, Directed> {
     fn add(&mut self, id: I) -> bool {
         if self.storage.contains_key(&id) {
             return false;
@@ -70,7 +70,7 @@ impl<I: Index> Construct<I> for AdjacencyGraph<I, Directed> {
     }
 }
 
-impl<I: Index> Construct<I> for AdjacencyGraph<I, Undirected> {
+impl<I: Index> Construct<I> for AdjacencyList<I, Undirected> {
     fn add(&mut self, id: I) -> bool {
         if self.storage.contains_key(&id) {
             return false;
@@ -94,8 +94,12 @@ impl<I: Index> Construct<I> for AdjacencyGraph<I, Undirected> {
 
 // Vertex and edge providers
 
-impl<I: Index, D> VertexProvider<I> for AdjacencyGraph<I, D> {
-    type Vertices<'a> = impl Topology<Item = I>;
+impl<I: Index, D> VertexProvider<I> for AdjacencyList<I, D> {
+    type Vertices<'a>
+    where
+        D: 'a,
+        I: 'a,
+    = impl Topology<Item = I>;
 
     fn order(&self) -> usize {
         self.storage.len()
@@ -106,9 +110,12 @@ impl<I: Index, D> VertexProvider<I> for AdjacencyGraph<I, D> {
     }
 }
 
-impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Directed> {
+impl<I: Index> EdgeProvider<I> for AdjacencyList<I, Directed> {
     type Edge = (I, I);
-    type Edges<'a> = impl Topology<Item = Self::Edge>;
+    type Edges<'a>
+    where
+        I: 'a,
+    = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.storage.values().map(|edges| edges.len()).sum()
@@ -119,9 +126,12 @@ impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Directed> {
     }
 }
 
-impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Undirected> {
+impl<I: Index> EdgeProvider<I> for AdjacencyList<I, Undirected> {
     type Edge = UnorderedPair<I>;
-    type Edges<'a> = impl Topology<Item = Self::Edge>;
+    type Edges<'a>
+    where
+        I: 'a,
+    = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.storage
@@ -139,14 +149,20 @@ impl<I: Index> EdgeProvider<I> for AdjacencyGraph<I, Undirected> {
 // Vertex topology
 
 struct Vertices<'a, I, D> {
-    graph: &'a AdjacencyGraph<I, D>,
+    graph: &'a AdjacencyList<I, D>,
 }
 
 impl<'a, I: Index, D> Topology for Vertices<'a, I, D> {
     type Item = I;
     type BuildHasher = RandomState;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph.storage.keys().copied()
@@ -167,14 +183,20 @@ impl<'a, I: Index, D> Topology for Vertices<'a, I, D> {
 // Edge topology
 
 struct Edges<'a, I, D> {
-    graph: &'a AdjacencyGraph<I, D>,
+    graph: &'a AdjacencyList<I, D>,
 }
 
 impl<'a, I: Index> Topology for Edges<'a, I, Directed> {
     type Item = (I, I);
     type BuildHasher = RandomState;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph
@@ -198,8 +220,14 @@ impl<'a, I: Index> Topology for Edges<'a, I, Directed> {
 impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
     type Item = UnorderedPair<I>;
     type BuildHasher = UnorderedBuildHasher;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.graph
@@ -223,7 +251,7 @@ impl<'a, I: Index> Topology for Edges<'a, I, Undirected> {
 }
 
 fn outbound_edges<I: Index, D>(
-    graph: &AdjacencyGraph<I, D>,
+    graph: &AdjacencyList<I, D>,
     source: I,
     exclude: I,
 ) -> Option<impl Iterator<Item = (I, I)> + '_> {
@@ -238,7 +266,7 @@ fn outbound_edges<I: Index, D>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    type DGraph = AdjacencyGraph<usize, Directed>;
+    type DGraph = AdjacencyList<usize, Directed>;
 
     #[test]
     fn can_add_vertices() {

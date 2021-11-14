@@ -120,7 +120,10 @@ fn adjacent(ax: usize, ay: usize, bx: usize, by: usize) -> bool {
 // Vertex and edge providers
 
 impl<I: Index> VertexProvider<I> for Grid<I> {
-    type Vertices<'a> = impl Topology<Item = I>;
+    type Vertices<'a>
+    where
+        Self: 'a,
+    = impl Topology<Item = I>;
 
     fn order(&self) -> usize {
         self.coords.len()
@@ -133,7 +136,10 @@ impl<I: Index> VertexProvider<I> for Grid<I> {
 
 impl<I: Index> EdgeProvider<I> for Grid<I> {
     type Edge = Edge<I>;
-    type Edges<'a> = impl Topology<Item = Self::Edge>;
+    type Edges<'a>
+    where
+        Self: 'a,
+    = impl Topology<Item = Self::Edge>;
 
     fn size(&self) -> usize {
         self.rows * (self.columns - 1) + self.columns * (self.rows - 1)
@@ -153,8 +159,14 @@ struct Vertices<'a, I> {
 impl<'a, I: Index> Topology for Vertices<'a, I> {
     type Item = I;
     type BuildHasher = RandomState;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         self.grid.coords.keys().copied()
@@ -183,8 +195,14 @@ struct Edges<'a, I> {
 impl<'a, I: Index> Topology for Edges<'a, I> {
     type Item = Edge<I>;
     type BuildHasher = UnorderedBuildHasher;
-    type ItemIter<'b> = impl Iterator<Item = Self::Item>;
-    type AdjacentIter<'b> = impl Iterator<Item = Self::Item>;
+    type ItemIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
+    type AdjacentIter<'b>
+    where
+        Self: 'b,
+    = impl Iterator<Item = Self::Item>;
 
     fn iter(&self) -> Self::ItemIter<'_> {
         let grid = &self.grid.grid;
